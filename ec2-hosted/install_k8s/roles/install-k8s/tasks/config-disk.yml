@@ -1,0 +1,20 @@
+- name: Create a data directory
+  file:
+    path: /data
+    state: directory
+    mode: '0755'
+
+- name: Create a ext4 filesystem on /dev/nvme1n1
+  filesystem:
+    fstype: ext4
+    dev: /dev/nvme1n1
+  register: disk
+
+- name: mount disk
+  shell: mount /dev/nvme1n1 /data
+
+- name: Automatically mount an attached volume after reboot
+  shell:
+    echo UUID=$(blkid | grep ext4 | grep -v PARTUUID | awk '{split($0,id,"\""); print id[2]}') /data ext4 defaults,nofail 0 2 >> /etc/fstab
+  when:
+    - disk.changed

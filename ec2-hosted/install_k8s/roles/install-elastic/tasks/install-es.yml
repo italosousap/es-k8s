@@ -1,0 +1,10 @@
+- name: copy the 
+  copy:
+    src: elasticsearch.yml
+    dest: /tmp/elasticsearch.yml
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: insta
+  shell: kubectl apply -f /tmp/elasticsearch.yml

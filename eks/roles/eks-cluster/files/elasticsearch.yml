@@ -1,0 +1,57 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1
+kind: Elasticsearch
+metadata:
+  name: lab
+spec:
+  version: 7.15.0
+  volumeClaimDeletePolicy: DeleteOnScaledownOnly
+  http:
+    service:
+      spec:
+        type: LoadBalancer
+  nodeSets:
+  - name: node
+    count: 6
+    config:
+      node.master: true
+      node.data: true
+      node.ingest: true
+      node.store.allow_mmap: false
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data 
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 5Gi
+        storageClassName: es-storage
+    podTemplate:
+      spec:
+        volumes:
+        - name: elasticsearch-data
+        containers:
+        - name: elasticsearch
+          env:
+          - name: READINESS_PROBE_TIMEOUT
+            value: "20"
+          readinessProbe:
+              exec:
+                command:
+                - bash
+                - -c
+                - /mnt/elastic-internal/scripts/readiness-probe-script.sh
+              failureThreshold: 3
+              initialDelaySeconds: 15
+              periodSeconds: 12
+              successThreshold: 1
+              timeoutSeconds: 15
+          resources:
+            limits:
+              memory: 2Gi
+              cpu: 500m
+  updateStrategy:
+    changeBudget:
+      maxSurge: 2
+      maxUnavailable: 1

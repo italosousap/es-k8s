@@ -1,0 +1,3 @@
+---
+# tasks file for install-elastic
+- include: install-es.yml

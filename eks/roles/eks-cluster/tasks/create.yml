@@ -1,0 +1,43 @@
+- name: Create cluster using eksctl
+  local_action:
+    module: shell
+      eksctl create cluster --name {{ cluster_name }} \
+      --region {{ region }} \
+      --with-oidc \
+      --ssh-access \
+      --ssh-public-key {{ ssh_key_name }} \
+      --spot \
+      --zones={{ zones }} \
+      --instance-types={{ instance_type }} \
+      --profile {{ profile }} \
+      --node-volume-size {{ node_storage }} \
+      --nodes-min {{ node_min }} \
+      --nodes-max {{ node_max }} \
+      --asg-access
+
+- name: Install custom resource definition and operator
+  local_action:
+    module: shell
+      kubectl create -f "{{ item }}"
+  loop: "{{ crds_operator }}"
+
+- name: Install metric server and dashboard
+  local_action: 
+    module: shell
+      kubectl create -f "{{ item }}"
+  loop: "{{ metric_server }}"
+
+- name: Create resources in K8S
+  local_action:
+    module: shell
+      kubectl apply -f "{{ item }}"
+    args:
+      chdir: "roles/eks-cluster/files/"
+  loop: "{{ resources }}"
+  
+- name: Create resources in K8S
+  local_action:
+    module: shell
+      kubectl apply -f elasticsearch.yml -n "{{ namespace_name }}"
+    args:
+      chdir: "roles/eks-cluster/files/"

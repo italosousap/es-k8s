@@ -1,0 +1,94 @@
+- name: Uninstall old versions
+  apt:
+    name: "{{ container_run }}"
+    state: absent
+  vars:
+    container_run:
+    - docker
+    - docker-engine
+    - docker.io
+    - containerd
+    - runc
+
+- name: Installing some packages
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+
+#DOCKER
+- name: Download ubuntu gpg
+  get_url:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    dest: /usr/share/keyrings/docker-archive-keyring.gpg
+
+- name: Add docker's GPG Key
+  apt_key: 
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Collect facts
+  ansible.builtin.setup:
+
+- name: Add docker's repository
+  apt_repository:
+    repo: deb https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable
+    state: present
+
+- name: Update repos
+  apt:
+    update_cache: yes
+
+- name: Install Docker engine
+  apt:
+    name: "{{ docker_engine }}"
+
+- name: Create docker deamon file
+  copy:
+    src: daemon.json
+    dest: /etc/docker/daemon.json
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: restart service docker, also issue daemon-reload to pick up config changes
+  systemd:
+    state: restarted
+    daemon_reload: yes
+    name: docker
+
+- name: Add some modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  with_items:
+    - br_netfilter
+    - ip_vs_rr
+    - ip_vs_wrr
+    - ip_vs
+
+
+#KUBERNETES
+- name: Add k8s's GPG Key
+  apt_key: 
+    url: https://packages.cloud.google.com/apt/doc/apt-key.gpg 
+    state: present
+
+- name: add repo do repo k8s
+  apt_repository:
+    repo: deb https://apt.kubernetes.io/ kubernetes-xenial main
+    state: present
+
+- name: Instalando os pacotes kubeadm, kubelet e kubectl
+  apt:
+    name: "{{ packages }}"
+  vars:
+    packages:
+    - kubelet
+    - kubeadm
+    - kubectl

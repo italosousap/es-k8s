@@ -1,0 +1,5 @@
+---
+# vars file for install-monitoring-tools
+
+url_repo_helm: https://charts.helm.sh/stable
+deploy_prometheus: "-- set prometheus.Operator.createCustomResource=false vai-prometheus stable/prometheus-operator"
